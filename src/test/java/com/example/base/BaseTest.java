@@ -101,17 +101,10 @@ public class BaseTest {
 
     @AfterEach
     void closeContext(TestInfo testInfo) {
-        boolean testFailed = testInfo.getExecutionMode() == TestInfo.ExecutionMode.SAME_THREAD 
-                && testInfo.getTestMethod().isPresent();
-        
-        // Take screenshot on failure
-        if (testFailed && TestConfig.SCREENSHOT_ON_FAILURE) {
-            takeScreenshot(testInfo.getDisplayName() + "_FAILED");
-        }
-        
         // Take screenshot on success if configured
-        if (!testFailed && TestConfig.SCREENSHOT_ON_SUCCESS) {
-            takeScreenshot(testInfo.getDisplayName() + "_PASSED");
+        // Note: Screenshot on failure is handled by the ScreenshotExtension
+        if (TestConfig.SCREENSHOT_ON_SUCCESS) {
+            takeScreenshot(testInfo.getDisplayName() + "_COMPLETED");
         }
         
         // Stop tracing and save if enabled

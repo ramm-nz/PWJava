@@ -2,6 +2,7 @@ package com.example.tests;
 
 import com.example.base.BaseTest;
 import com.example.config.TestConfig;
+import com.example.listeners.ScreenshotExtension;
 import com.example.listeners.TestListener;
 import com.example.pages.*;
 import org.junit.jupiter.api.*;
@@ -14,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Execution(ExecutionMode.CONCURRENT) // Enable parallel execution
-@ExtendWith(TestListener.class)
+@ExtendWith({TestListener.class, ScreenshotExtension.class})
 public class SauceDemoTest extends BaseTest {
     
     private LoginPage loginPage;
