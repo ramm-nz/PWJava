@@ -1,6 +1,7 @@
 package com.example.base;
 
 import com.example.config.TestConfig;
+import com.example.factory.PageFactory;
 import com.microsoft.playwright.*;
 import org.junit.jupiter.api.*;
 
@@ -17,8 +18,12 @@ public class BaseTest {
     protected static Browser browser;
     protected BrowserContext context;
     protected Page page;
-    private static final ThreadLocal<BrowserContext> threadLocalContext = new ThreadLocal<>();
-    private static final ThreadLocal<Page> threadLocalPage = new ThreadLocal<>();
+    
+    // Option 1: PageManager for simple lazy initialization
+    protected PageManager pageManager;
+    
+    // Option 2: PageFactory for advanced factory pattern
+    protected PageFactory pageFactory;
     
     @BeforeAll
     static void launchBrowser() {
@@ -74,11 +79,16 @@ public class BaseTest {
         
         // Enable video recording if configured
         if (TestConfig.RECORD_VIDEO) {
-            contextOptions.setRecordVideoDir(Paths.get(TestConfig.VIDEO_DIR))
+            String videoFileName = sanitizeFileName(testInfo.getDisplayName()) + "_" + getTimestamp();
+            Path videoPath = Paths.get(TestConfig.VIDEO_DIR, videoFileName);
+            contextOptions.setRecordVideoDir(videoPath)
                     .setRecordVideoSize(TestConfig.VIEWPORT_WIDTH, TestConfig.VIEWPORT_HEIGHT);
         }
         
-        context = browser.newContext(contextOptions);
+        // Create new context for this test
+        synchronized (browser) {
+            context = browser.newContext(contextOptions);
+        }
         
         // Set timeouts
         context.setDefaultTimeout(TestConfig.DEFAULT_TIMEOUT);
@@ -86,42 +96,54 @@ public class BaseTest {
         
         page = context.newPage();
         
-        // Start tracing if enabled
-        if (TestConfig.ENABLE_TRACE) {
-            context.tracing().start(new Tracing.StartOptions()
-                    .setScreenshots(true)
-                    .setSnapshots(true)
-                    .setSources(true));
-        }
+        // Initialize page management utilities
+        pageManager = new PageManager(page);
+        pageFactory = new PageFactory(page);
         
-        // Store in ThreadLocal for parallel execution
-        threadLocalContext.set(context);
-        threadLocalPage.set(page);
+        // Start tracing if enabled (only for sequential execution)
+        if (TestConfig.ENABLE_TRACE && !TestConfig.PARALLEL_EXECUTION) {
+            try {
+                context.tracing().start(new Tracing.StartOptions()
+                        .setScreenshots(true)
+                        .setSnapshots(true)
+                        .setSources(true));
+            } catch (Exception e) {
+                System.err.println("Failed to start tracing: " + e.getMessage());
+            }
+        }
     }
 
     @AfterEach
     void closeContext(TestInfo testInfo) {
-        // Take screenshot on success if configured
-        // Note: Screenshot on failure is handled by the ScreenshotExtension
-        if (TestConfig.SCREENSHOT_ON_SUCCESS) {
-            takeScreenshot(testInfo.getDisplayName() + "_COMPLETED");
+        try {
+            // Take screenshot on success if configured
+            // Note: Screenshot on failure is handled by the ScreenshotExtension
+            if (TestConfig.SCREENSHOT_ON_SUCCESS && page != null && !page.isClosed()) {
+                takeScreenshot(testInfo.getDisplayName() + "_COMPLETED");
+            }
+            
+            // Stop tracing and save if enabled
+            if (TestConfig.ENABLE_TRACE && !TestConfig.PARALLEL_EXECUTION && context != null) {
+                try {
+                    String tracePath = TestConfig.TRACE_DIR + "/" + sanitizeFileName(testInfo.getDisplayName()) + "_" + getTimestamp() + ".zip";
+                    context.tracing().stop(new Tracing.StopOptions()
+                            .setPath(Paths.get(tracePath)));
+                } catch (Exception e) {
+                    System.err.println("Failed to stop tracing: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error in cleanup: " + e.getMessage());
+        } finally {
+            // Close context
+            if (context != null) {
+                try {
+                    context.close();
+                } catch (Exception e) {
+                    System.err.println("Failed to close context: " + e.getMessage());
+                }
+            }
         }
-        
-        // Stop tracing and save if enabled
-        if (TestConfig.ENABLE_TRACE && context != null) {
-            String tracePath = TestConfig.TRACE_DIR + "/" + sanitizeFileName(testInfo.getDisplayName()) + "_" + getTimestamp() + ".zip";
-            context.tracing().stop(new Tracing.StopOptions()
-                    .setPath(Paths.get(tracePath)));
-        }
-        
-        // Close context
-        if (context != null) {
-            context.close();
-        }
-        
-        // Clean up ThreadLocal
-        threadLocalContext.remove();
-        threadLocalPage.remove();
     }
     
     // Helper method to navigate to base URL
@@ -163,16 +185,6 @@ public class BaseTest {
         } catch (Exception e) {
             System.err.println("Failed to take screenshot: " + e.getMessage());
         }
-    }
-    
-    // Helper method to get current page for parallel execution
-    protected Page getCurrentPage() {
-        return threadLocalPage.get() != null ? threadLocalPage.get() : page;
-    }
-    
-    // Helper method to get current context for parallel execution
-    protected BrowserContext getCurrentContext() {
-        return threadLocalContext.get() != null ? threadLocalContext.get() : context;
     }
     
     // Utility method to create directory

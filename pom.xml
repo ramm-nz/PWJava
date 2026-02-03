@@ -56,10 +56,8 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.3</version>
                 <configuration>
-                    <!-- Parallel Execution Configuration -->
-                    <parallel>methods</parallel>
-                    <threadCount>${workers}</threadCount>
-                    <perCoreThreadCount>false</perCoreThreadCount>
+                    <!-- Parallel execution disabled by default due to Playwright limitations -->
+                    <!-- Enable with -Dparallel.execution=true for compatible browsers -->
                     <forkCount>1</forkCount>
                     <reuseForks>true</reuseForks>
                     
@@ -77,6 +75,7 @@
                         <retries>${retries}</retries>
                         <screenshot.failure>${screenshot.failure}</screenshot.failure>
                         <screenshot.success>${screenshot.success}</screenshot.success>
+                        <parallel.execution>${parallel.execution}</parallel.execution>
                     </systemPropertyVariables>
                     
                     <!-- Test Retry Configuration -->
@@ -130,6 +129,7 @@
                 <retries>2</retries>
                 <screenshot.failure>true</screenshot.failure>
                 <screenshot.success>false</screenshot.success>
+                <parallel.execution>false</parallel.execution>
             </properties>
         </profile>
         
@@ -143,6 +143,7 @@
                 <retries>3</retries>
                 <screenshot.failure>true</screenshot.failure>
                 <screenshot.success>false</screenshot.success>
+                <parallel.execution>false</parallel.execution>
             </properties>
         </profile>
         
@@ -156,6 +157,7 @@
                 <retries>2</retries>
                 <screenshot.failure>true</screenshot.failure>
                 <screenshot.success>false</screenshot.success>
+                <parallel.execution>false</parallel.execution>
             </properties>
         </profile>
         
@@ -169,6 +171,7 @@
                 <retries>2</retries>
                 <screenshot.failure>true</screenshot.failure>
                 <screenshot.success>false</screenshot.success>
+                <parallel.execution>false</parallel.execution>
             </properties>
         </profile>
     </profiles>

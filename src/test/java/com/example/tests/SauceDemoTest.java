@@ -4,44 +4,34 @@ import com.example.base.BaseTest;
 import com.example.config.TestConfig;
 import com.example.listeners.ScreenshotExtension;
 import com.example.listeners.TestListener;
-import com.example.pages.*;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.parallel.Execution;
-import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Sauce Demo Test Suite using PageFactory Pattern
+ * Page objects are lazily initialized and cached through the factory
+ */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@Execution(ExecutionMode.CONCURRENT) // Enable parallel execution
 @ExtendWith({TestListener.class, ScreenshotExtension.class})
 public class SauceDemoTest extends BaseTest {
     
-    private LoginPage loginPage;
-    private ProductsPage productsPage;
-    private CartPage cartPage;
-    private CheckoutPage checkoutPage;
-    
-    @BeforeEach
-    void initializePages() {
-        loginPage = new LoginPage(page);
-        productsPage = new ProductsPage(page);
-        cartPage = new CartPage(page);
-        checkoutPage = new CheckoutPage(page);
-    }
+    // No need to declare page objects - using pageFactory from BaseTest
+    // pageFactory provides: loginPage(), productsPage(), cartPage(), checkoutPage()
 
     @Test
     @Order(1)
     @DisplayName("Test successful login with standard user")
     void testSuccessfulLogin() {
-        loginPage.navigate();
-        assertTrue(loginPage.isLoginButtonVisible(), "Login button should be visible");
+        pageFactory.loginPage().navigate();
+        assertTrue(pageFactory.loginPage().isLoginButtonVisible(), "Login button should be visible");
         
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        assertTrue(productsPage.isDisplayed(), "Products list should be visible after login");
-        assertEquals("Products", productsPage.getPageTitle(), "Page title should be 'Products'");
+        assertTrue(pageFactory.productsPage().isDisplayed(), "Products list should be visible after login");
+        assertEquals("Products", pageFactory.productsPage().getPageTitle(), "Page title should be 'Products'");
         assertEquals(TestConfig.BASE_URL + "inventory.html", page.url(), "URL should be inventory page");
     }
 
@@ -49,11 +39,11 @@ public class SauceDemoTest extends BaseTest {
     @Order(2)
     @DisplayName("Test login with invalid credentials")
     void testInvalidLogin() {
-        loginPage.navigate();
-        loginPage.login("invalid_user", "wrong_password");
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login("invalid_user", "wrong_password");
         
-        assertTrue(loginPage.isErrorMessageDisplayed(), "Error message should be displayed");
-        String errorText = loginPage.getErrorMessage();
+        assertTrue(pageFactory.loginPage().isErrorMessageDisplayed(), "Error message should be displayed");
+        String errorText = pageFactory.loginPage().getErrorMessage();
         assertThat(errorText).contains("Username and password do not match");
     }
     
@@ -61,11 +51,11 @@ public class SauceDemoTest extends BaseTest {
     @Order(3)
     @DisplayName("Test login with locked out user")
     void testLockedOutUser() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.LOCKED_OUT_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.LOCKED_OUT_USER, TestConfig.PASSWORD);
         
-        assertTrue(loginPage.isErrorMessageDisplayed(), "Error message should be displayed");
-        String errorText = loginPage.getErrorMessage();
+        assertTrue(pageFactory.loginPage().isErrorMessageDisplayed(), "Error message should be displayed");
+        String errorText = pageFactory.loginPage().getErrorMessage();
         assertThat(errorText).contains("Sorry, this user has been locked out");
     }
 
@@ -73,89 +63,89 @@ public class SauceDemoTest extends BaseTest {
     @Order(4)
     @DisplayName("Test adding product to cart")
     void testAddProductToCart() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        productsPage.addProductToCart("sauce-labs-backpack");
+        pageFactory.productsPage().addProductToCart("sauce-labs-backpack");
         
-        String cartBadge = productsPage.getCartItemCount();
+        String cartBadge = pageFactory.productsPage().getCartItemCount();
         assertEquals("1", cartBadge, "Cart should show 1 item");
         
-        productsPage.goToCart();
-        assertTrue(cartPage.isCartItemDisplayed(), "Cart should contain an item");
-        assertEquals(1, cartPage.getCartItemCount(), "Cart should have exactly 1 item");
+        pageFactory.productsPage().goToCart();
+        assertTrue(pageFactory.cartPage().isCartItemDisplayed(), "Cart should contain an item");
+        assertEquals(1, pageFactory.cartPage().getCartItemCount(), "Cart should have exactly 1 item");
     }
 
     @Test
     @Order(5)
     @DisplayName("Test adding multiple products to cart")
     void testAddMultipleProductsToCart() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        productsPage.addProductToCart("sauce-labs-backpack");
-        productsPage.addProductToCart("sauce-labs-bike-light");
-        productsPage.addProductToCart("sauce-labs-bolt-t-shirt");
+        pageFactory.productsPage().addProductToCart("sauce-labs-backpack");
+        pageFactory.productsPage().addProductToCart("sauce-labs-bike-light");
+        pageFactory.productsPage().addProductToCart("sauce-labs-bolt-t-shirt");
         
-        String cartBadge = productsPage.getCartItemCount();
+        String cartBadge = pageFactory.productsPage().getCartItemCount();
         assertEquals("3", cartBadge, "Cart should show 3 items");
         
-        productsPage.goToCart();
-        assertEquals(3, cartPage.getCartItemCount(), "Cart should have exactly 3 items");
+        pageFactory.productsPage().goToCart();
+        assertEquals(3, pageFactory.cartPage().getCartItemCount(), "Cart should have exactly 3 items");
     }
 
     @Test
     @Order(6)
     @DisplayName("Test complete checkout flow")
     void testCompleteCheckoutFlow() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        productsPage.addProductToCart("sauce-labs-backpack");
-        productsPage.goToCart();
+        pageFactory.productsPage().addProductToCart("sauce-labs-backpack");
+        pageFactory.productsPage().goToCart();
         
-        assertTrue(cartPage.isCartItemDisplayed(), "Cart should have items");
-        cartPage.proceedToCheckout();
+        assertTrue(pageFactory.cartPage().isCartItemDisplayed(), "Cart should have items");
+        pageFactory.cartPage().proceedToCheckout();
         
-        checkoutPage.fillCheckoutInformation("John", "Doe", "12345");
-        checkoutPage.clickContinue();
+        pageFactory.checkoutPage().fillCheckoutInformation("John", "Doe", "12345");
+        pageFactory.checkoutPage().clickContinue();
         
-        assertTrue(checkoutPage.isSummaryInfoDisplayed(), "Summary info should be visible");
-        checkoutPage.clickFinish();
+        assertTrue(pageFactory.checkoutPage().isSummaryInfoDisplayed(), "Summary info should be visible");
+        pageFactory.checkoutPage().clickFinish();
         
-        assertTrue(checkoutPage.isOrderComplete(), "Order should be complete");
-        assertEquals("Thank you for your order!", checkoutPage.getCompleteHeader());
-        assertThat(checkoutPage.getCompleteText()).contains("Your order has been dispatched");
+        assertTrue(pageFactory.checkoutPage().isOrderComplete(), "Order should be complete");
+        assertEquals("Thank you for your order!", pageFactory.checkoutPage().getCompleteHeader());
+        assertThat(pageFactory.checkoutPage().getCompleteText()).contains("Your order has been dispatched");
     }
 
     @Test
     @Order(7)
     @DisplayName("Test removing product from cart")
     void testRemoveProductFromCart() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        productsPage.addProductToCart("sauce-labs-backpack");
-        productsPage.goToCart();
+        pageFactory.productsPage().addProductToCart("sauce-labs-backpack");
+        pageFactory.productsPage().goToCart();
         
-        assertEquals(1, cartPage.getCartItemCount(), "Cart should have 1 item");
+        assertEquals(1, pageFactory.cartPage().getCartItemCount(), "Cart should have 1 item");
         
-        cartPage.removeItem(0);
+        pageFactory.cartPage().removeItem(0);
         
-        assertFalse(cartPage.isCartItemDisplayed(), "Cart should be empty after removal");
-        assertEquals("0", productsPage.getCartItemCount(), "Cart badge should not be visible");
+        assertFalse(pageFactory.cartPage().isCartItemDisplayed(), "Cart should be empty after removal");
+        assertEquals("0", pageFactory.productsPage().getCartItemCount(), "Cart badge should not be visible");
     }
 
     @Test
     @Order(8)
     @DisplayName("Test sorting products by price (low to high)")
     void testProductSortingLowToHigh() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        productsPage.sortProducts("lohi");
+        pageFactory.productsPage().sortProducts("lohi");
         
-        String firstPrice = productsPage.getFirstProductPrice();
+        String firstPrice = pageFactory.productsPage().getFirstProductPrice();
         assertNotNull(firstPrice, "First product price should be visible");
         assertTrue(firstPrice.startsWith("$"), "Price should start with $");
     }
@@ -164,12 +154,12 @@ public class SauceDemoTest extends BaseTest {
     @Order(9)
     @DisplayName("Test sorting products by name (A to Z)")
     void testProductSortingNameAtoZ() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        productsPage.sortProducts("az");
+        pageFactory.productsPage().sortProducts("az");
         
-        int productCount = productsPage.getProductCount();
+        int productCount = pageFactory.productsPage().getProductCount();
         assertTrue(productCount > 0, "Should have products on the page");
     }
 
@@ -177,14 +167,14 @@ public class SauceDemoTest extends BaseTest {
     @Order(10)
     @DisplayName("Test logout functionality")
     void testLogout() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        assertTrue(productsPage.isDisplayed(), "Should be on products page");
+        assertTrue(pageFactory.productsPage().isDisplayed(), "Should be on products page");
         
-        productsPage.logout();
+        pageFactory.productsPage().logout();
         
-        assertTrue(loginPage.isLoginButtonVisible(), "Should be redirected to login page");
+        assertTrue(pageFactory.loginPage().isLoginButtonVisible(), "Should be redirected to login page");
         assertEquals(TestConfig.BASE_URL, page.url(), "URL should be login page");
     }
     
@@ -192,29 +182,29 @@ public class SauceDemoTest extends BaseTest {
     @Order(11)
     @DisplayName("Test continue shopping from cart")
     void testContinueShoppingFromCart() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        productsPage.goToCart();
-        cartPage.continueShopping();
+        pageFactory.productsPage().goToCart();
+        pageFactory.cartPage().continueShopping();
         
-        assertTrue(productsPage.isDisplayed(), "Should return to products page");
-        assertEquals("Products", productsPage.getPageTitle());
+        assertTrue(pageFactory.productsPage().isDisplayed(), "Should return to products page");
+        assertEquals("Products", pageFactory.productsPage().getPageTitle());
     }
     
     @Test
     @Order(12)
     @DisplayName("Test checkout with missing information")
     void testCheckoutWithMissingInformation() {
-        loginPage.navigate();
-        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
+        pageFactory.loginPage().navigate();
+        pageFactory.loginPage().login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
-        productsPage.addProductToCart("sauce-labs-backpack");
-        productsPage.goToCart();
-        cartPage.proceedToCheckout();
+        pageFactory.productsPage().addProductToCart("sauce-labs-backpack");
+        pageFactory.productsPage().goToCart();
+        pageFactory.cartPage().proceedToCheckout();
         
         // Try to continue without filling information
-        checkoutPage.clickContinue();
+        pageFactory.checkoutPage().clickContinue();
         
         // Should show error (page should still be on checkout step one)
         assertTrue(page.isVisible("[data-test='error']"), "Error message should be displayed");

@@ -22,9 +22,12 @@ public class TestConfig {
     public static final boolean RECORD_VIDEO = Boolean.parseBoolean(System.getProperty("record.video", "false"));
     public static final String VIDEO_DIR = System.getProperty("video.dir", "target/videos");
     
-    // Trace Configuration
+    // Trace Configuration (Disabled by default due to parallel execution issues)
     public static final boolean ENABLE_TRACE = Boolean.parseBoolean(System.getProperty("enable.trace", "false"));
     public static final String TRACE_DIR = System.getProperty("trace.dir", "target/traces");
+    
+    // Parallel Execution Configuration
+    public static final boolean PARALLEL_EXECUTION = Boolean.parseBoolean(System.getProperty("parallel.execution", "false"));
     
     // Viewport Configuration
     public static final int VIEWPORT_WIDTH = Integer.parseInt(System.getProperty("viewport.width", "1920"));
