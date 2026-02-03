@@ -55,29 +55,126 @@ mvn exec:java -e -D exec.mainClass=com.microsoft.playwright.CLI -D exec.args="in
 
 ## Running Tests
 
-### Run All Tests
+### Quick Start - Using Shell Scripts
 
+**For Mac/Linux:**
 ```bash
-mvn test
+chmod +x run-tests.sh
+./run-tests.sh
 ```
 
-### Run Specific Test Class
+**For Windows:**
+```bash
+run-tests.bat
+```
 
+### Run All Tests (Maven)
+
+```bash
+mvn clean test
+```
+
+### Run with Different Configurations
+
+**Run with Firefox:**
+```bash
+mvn test -Dbrowser=firefox
+```
+
+**Run in Headless Mode:**
+```bash
+mvn test -Dheadless=true
+```
+
+**Run with 8 Parallel Workers:**
+```bash
+mvn test -Dworkers=8
+```
+
+**Run with 3 Retries:**
+```bash
+mvn test -Dretries=3
+```
+
+**Take Screenshots on Success:**
+```bash
+mvn test -Dscreenshot.success=true
+```
+
+**Combine Multiple Options:**
+```bash
+mvn test -Dbrowser=webkit -Dheadless=true -Dworkers=4 -Dretries=2
+```
+
+### Using Maven Profiles
+
+**Default Profile (Chromium, Headed, 4 workers):**
+```bash
+mvn test -Pdefault
+```
+
+**CI Profile (Chromium, Headless, 2 workers):**
+```bash
+mvn test -Pci
+```
+
+**Firefox Profile:**
+```bash
+mvn test -Pfirefox
+```
+
+**WebKit Profile:**
+```bash
+mvn test -Pwebkit
+```
+
+### Run Specific Tests
+
+**Run Specific Test Class:**
 ```bash
 mvn test -Dtest=SauceDemoTest
 ```
 
-### Run Specific Test Method
-
+**Run Specific Test Method:**
 ```bash
 mvn test -Dtest=SauceDemoTest#testSuccessfulLogin
 ```
 
-### Run Tests in Headless Mode
+**Run Multiple Test Classes:**
+```bash
+mvn test -Dtest=SauceDemoTest,AnotherTest
+```
 
-Edit `BaseTest.java` and change:
-```java
-.setHeadless(false)  // Change to true
+### Advanced Script Usage
+
+**Using run-tests.sh (Mac/Linux):**
+```bash
+# Run with Firefox and 2 workers
+./run-tests.sh -b firefox -w 2
+
+# Run in headless mode with CI profile
+./run-tests.sh --headless -p ci
+
+# Run with WebKit and screenshot all tests
+./run-tests.sh -b webkit --screenshot-all
+
+# Show help
+./run-tests.sh --help
+```
+
+**Using run-tests.bat (Windows):**
+```bash
+# Run with Firefox and 2 workers
+run-tests.bat -b firefox -w 2
+
+# Run in headless mode with CI profile
+run-tests.bat --headless -p ci
+
+# Run with WebKit and screenshot all tests
+run-tests.bat -b webkit --screenshot-all
+
+# Show help
+run-tests.bat --help
 ```
 
 ## Test Scenarios Covered
@@ -128,21 +225,82 @@ This project follows the Page Object Model (POM) design pattern for better maint
 
 ## Configuration
 
-### Browser Configuration
+### Configuration Options
 
-Browser settings can be modified in `BaseTest.java`:
+All configuration is centralized in `TestConfig.java`. You can override settings via system properties:
 
-```java
-browser = playwright.chromium().launch(new BrowserType.LaunchOptions()
-    .setHeadless(false)  // Set to true for headless mode
-    .setSlowMo(50));     // Adjust delay between actions
+| Property | Default | Description |
+|----------|---------|-------------|
+| `browser` | chromium | Browser to use (chromium, firefox, webkit) |
+| `headless` | false | Run browser in headless mode |
+| `slowmo` | 50 | Delay between actions in milliseconds |
+| `workers` | 4 | Number of parallel test workers |
+| `retries` | 2 | Number of retries for failed tests |
+| `screenshot.failure` | true | Take screenshot on test failure |
+| `screenshot.success` | false | Take screenshot on test success |
+| `screenshot.dir` | target/screenshots | Directory for screenshots |
+| `record.video` | false | Enable video recording |
+| `video.dir` | target/videos | Directory for videos |
+| `enable.trace` | false | Enable Playwright trace recording |
+| `trace.dir` | target/traces | Directory for trace files |
+| `viewport.width` | 1920 | Browser viewport width |
+| `viewport.height` | 1080 | Browser viewport height |
+| `default.timeout` | 30000 | Default timeout in milliseconds |
+| `navigation.timeout` | 30000 | Navigation timeout in milliseconds |
+
+### Advanced Features
+
+#### 1. Parallel Execution
+Tests run in parallel by default using JUnit 5's parallel execution:
+- Configured in `junit-platform.properties`
+- Number of workers controlled by `-Dworkers=N`
+- Can be disabled in `junit-platform.properties`
+
+#### 2. Test Retries
+Failed tests are automatically retried:
+- Configured via `-Dretries=N`
+- Implemented in Maven Surefire plugin
+- Retry extension available in `RetryExtension.java`
+
+#### 3. Screenshots
+Automatic screenshot capture:
+- On failure: `screenshot.failure=true` (default)
+- On success: `screenshot.success=false` (default)
+- Saved to `target/screenshots/` with timestamp
+- Full page screenshots supported
+
+#### 4. Video Recording
+Enable with `-Drecord.video=true`:
+```bash
+mvn test -Drecord.video=true -Dvideo.dir=target/videos
 ```
 
-### Viewport Size
+#### 5. Trace Recording
+Enable Playwright trace for debugging:
+```bash
+mvn test -Denable.trace=true
+```
+View traces at: https://trace.playwright.dev/
 
-```java
-context = browser.newContext(new Browser.NewContextOptions()
-    .setViewportSize(1920, 1080));
+#### 6. Browser Selection
+Run tests on different browsers:
+```bash
+mvn test -Dbrowser=chromium  # Chrome/Edge
+mvn test -Dbrowser=firefox   # Firefox
+mvn test -Dbrowser=webkit    # Safari
+```
+
+### Custom Configuration Example
+
+```bash
+mvn test \
+  -Dbrowser=firefox \
+  -Dheadless=true \
+  -Dworkers=8 \
+  -Dretries=3 \
+  -Dscreenshot.success=true \
+  -Drecord.video=true \
+  -Denable.trace=true
 ```
 
 ## Reporting

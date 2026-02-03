@@ -50,11 +50,41 @@
 
     <build>
         <plugins>
+            <!-- Surefire Plugin for Test Execution -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.3</version>
+                <configuration>
+                    <!-- Parallel Execution Configuration -->
+                    <parallel>methods</parallel>
+                    <threadCount>${workers}</threadCount>
+                    <perCoreThreadCount>false</perCoreThreadCount>
+                    <forkCount>1</forkCount>
+                    <reuseForks>true</reuseForks>
+                    
+                    <!-- Test Selection -->
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                    
+                    <!-- System Properties -->
+                    <systemPropertyVariables>
+                        <browser>${browser}</browser>
+                        <headless>${headless}</headless>
+                        <workers>${workers}</workers>
+                        <retries>${retries}</retries>
+                        <screenshot.failure>${screenshot.failure}</screenshot.failure>
+                        <screenshot.success>${screenshot.success}</screenshot.success>
+                    </systemPropertyVariables>
+                    
+                    <!-- Test Retry Configuration -->
+                    <rerunFailingTestsCount>${retries}</rerunFailingTestsCount>
+                </configuration>
             </plugin>
+            
+            <!-- Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -64,6 +94,82 @@
                     <target>11</target>
                 </configuration>
             </plugin>
+            
+            <!-- Failsafe Plugin for Integration Tests -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>3.2.3</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <parallel>methods</parallel>
+                    <threadCount>${workers}</threadCount>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+    
+    <!-- Default Property Values -->
+    <profiles>
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <browser>chromium</browser>
+                <headless>false</headless>
+                <workers>4</workers>
+                <retries>2</retries>
+                <screenshot.failure>true</screenshot.failure>
+                <screenshot.success>false</screenshot.success>
+            </properties>
+        </profile>
+        
+        <!-- CI Profile for Continuous Integration -->
+        <profile>
+            <id>ci</id>
+            <properties>
+                <browser>chromium</browser>
+                <headless>true</headless>
+                <workers>2</workers>
+                <retries>3</retries>
+                <screenshot.failure>true</screenshot.failure>
+                <screenshot.success>false</screenshot.success>
+            </properties>
+        </profile>
+        
+        <!-- Firefox Profile -->
+        <profile>
+            <id>firefox</id>
+            <properties>
+                <browser>firefox</browser>
+                <headless>false</headless>
+                <workers>4</workers>
+                <retries>2</retries>
+                <screenshot.failure>true</screenshot.failure>
+                <screenshot.success>false</screenshot.success>
+            </properties>
+        </profile>
+        
+        <!-- WebKit Profile -->
+        <profile>
+            <id>webkit</id>
+            <properties>
+                <browser>webkit</browser>
+                <headless>false</headless>
+                <workers>4</workers>
+                <retries>2</retries>
+                <screenshot.failure>true</screenshot.failure>
+                <screenshot.success>false</screenshot.success>
+            </properties>
+        </profile>
+    </profiles>
 </project>

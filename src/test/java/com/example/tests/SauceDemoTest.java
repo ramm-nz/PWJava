@@ -1,13 +1,20 @@
 package com.example.tests;
 
 import com.example.base.BaseTest;
+import com.example.config.TestConfig;
+import com.example.listeners.TestListener;
 import com.example.pages.*;
 import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@Execution(ExecutionMode.CONCURRENT) // Enable parallel execution
+@ExtendWith(TestListener.class)
 public class SauceDemoTest extends BaseTest {
     
     private LoginPage loginPage;
@@ -30,11 +37,11 @@ public class SauceDemoTest extends BaseTest {
         loginPage.navigate();
         assertTrue(loginPage.isLoginButtonVisible(), "Login button should be visible");
         
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         assertTrue(productsPage.isDisplayed(), "Products list should be visible after login");
         assertEquals("Products", productsPage.getPageTitle(), "Page title should be 'Products'");
-        assertEquals(BASE_URL + "inventory.html", page.url(), "URL should be inventory page");
+        assertEquals(TestConfig.BASE_URL + "inventory.html", page.url(), "URL should be inventory page");
     }
 
     @Test
@@ -54,7 +61,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test login with locked out user")
     void testLockedOutUser() {
         loginPage.navigate();
-        loginPage.login(LOCKED_OUT_USER, PASSWORD);
+        loginPage.login(TestConfig.LOCKED_OUT_USER, TestConfig.PASSWORD);
         
         assertTrue(loginPage.isErrorMessageDisplayed(), "Error message should be displayed");
         String errorText = loginPage.getErrorMessage();
@@ -66,7 +73,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test adding product to cart")
     void testAddProductToCart() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         productsPage.addProductToCart("sauce-labs-backpack");
         
@@ -83,7 +90,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test adding multiple products to cart")
     void testAddMultipleProductsToCart() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         productsPage.addProductToCart("sauce-labs-backpack");
         productsPage.addProductToCart("sauce-labs-bike-light");
@@ -101,7 +108,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test complete checkout flow")
     void testCompleteCheckoutFlow() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         productsPage.addProductToCart("sauce-labs-backpack");
         productsPage.goToCart();
@@ -125,7 +132,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test removing product from cart")
     void testRemoveProductFromCart() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         productsPage.addProductToCart("sauce-labs-backpack");
         productsPage.goToCart();
@@ -143,7 +150,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test sorting products by price (low to high)")
     void testProductSortingLowToHigh() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         productsPage.sortProducts("lohi");
         
@@ -157,7 +164,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test sorting products by name (A to Z)")
     void testProductSortingNameAtoZ() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         productsPage.sortProducts("az");
         
@@ -170,14 +177,14 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test logout functionality")
     void testLogout() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         assertTrue(productsPage.isDisplayed(), "Should be on products page");
         
         productsPage.logout();
         
         assertTrue(loginPage.isLoginButtonVisible(), "Should be redirected to login page");
-        assertEquals(BASE_URL, page.url(), "URL should be login page");
+        assertEquals(TestConfig.BASE_URL, page.url(), "URL should be login page");
     }
     
     @Test
@@ -185,7 +192,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test continue shopping from cart")
     void testContinueShoppingFromCart() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         productsPage.goToCart();
         cartPage.continueShopping();
@@ -199,7 +206,7 @@ public class SauceDemoTest extends BaseTest {
     @DisplayName("Test checkout with missing information")
     void testCheckoutWithMissingInformation() {
         loginPage.navigate();
-        loginPage.login(STANDARD_USER, PASSWORD);
+        loginPage.login(TestConfig.STANDARD_USER, TestConfig.PASSWORD);
         
         productsPage.addProductToCart("sauce-labs-backpack");
         productsPage.goToCart();
